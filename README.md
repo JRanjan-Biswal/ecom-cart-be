@@ -17,6 +17,18 @@ A RESTful backend API for the EComCart e-commerce platform, built with Node.js, 
 
 EComCart Backend is a lightweight e-commerce API server that provides essential functionality for user authentication, product management, shopping cart operations, and user profile management. It uses NeDB (Node Embedded Database) for data persistence, making it perfect for development and small-scale deployments.
 
+## 📸 Application Screenshots
+
+**Frontend Application**
+
+![Homepage](screenshots/homepage.png)
+*Modern homepage with hero banner, product grid and search functionality*
+
+![Cart](screenshots/cart.png)
+*Shopping cart interface*
+
+📸 For more screenshots, visit the [Frontend Repository](https://github.com/JRanjan-Biswal/ecom-cart-fe)
+
 ## ✨ Features
 
 - 🔐 **User Authentication**: Secure registration and login with JWT tokens
