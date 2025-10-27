@@ -14,6 +14,17 @@ router.get("/", (req, res) => {
   });
 });
 
+router.get("/promoted", (req, res) => {
+  console.log("Request received for retrieving promoted products");
+
+  products.find({ promoted: true }, null, { sort: { promotionOrder: 1 } }, (err, docs) => {
+    if (err) {
+      return handleError(res, err);
+    }
+    return res.status(200).json(docs);
+  });
+});
+
 // /search?value=
 router.get("/search", (req, res) => {
   console.log("Request received for searching ", req.query.value);
