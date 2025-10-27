@@ -39,6 +39,9 @@ router.post("/register", (req, res) => {
       balance: 5000,
       cart: [],
       addresses: [],
+      name: "",
+      mobile: "",
+      orders: [],
     });
 
     console.log(`Registered user: ${req.body.username}`);
