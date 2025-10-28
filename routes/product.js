@@ -8,9 +8,11 @@ router.get("/", (req, res) => {
 
   products.find({}, (err, docs) => {
     if (err) {
+      console.error("Error fetching products:", err);
       return handleError(res, err);
     }
-    return res.status(200).json(docs);
+    console.log(`Found ${docs ? docs.length : 0} products`);
+    return res.status(200).json(docs || []);
   });
 });
 
@@ -19,9 +21,11 @@ router.get("/promoted", (req, res) => {
 
   products.find({ promoted: true }, null, { sort: { promotionOrder: 1 } }, (err, docs) => {
     if (err) {
+      console.error("Error fetching promoted products:", err);
       return handleError(res, err);
     }
-    return res.status(200).json(docs);
+    console.log(`Found ${docs ? docs.length : 0} promoted products`);
+    return res.status(200).json(docs || []);
   });
 });
 

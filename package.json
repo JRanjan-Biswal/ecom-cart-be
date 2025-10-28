@@ -3,13 +3,16 @@
     "version": "0.1.0",
     "private": true,
     "scripts": {
-        "start": "node index.js"
+        "start": "node index.js",
+        "migrate": "node migrate.js"
     },
     "dependencies": {
         "cors": "^2.8.5",
         "express": "^4.17.1",
         "jsonwebtoken": "^8.5.1",
         "nanoid": "^3.1.12",
-        "nedb": "^1.8.0"
+        "nedb": "^1.8.0",
+        "mongoose": "^8.0.0",
+        "dotenv": "^16.0.0"
     }
 }

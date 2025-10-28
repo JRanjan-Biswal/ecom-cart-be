@@ -3,3 +3,4 @@ node_modules/
 db/*.db
 yarn.lock
 *.db
+.env

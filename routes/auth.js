@@ -33,7 +33,10 @@ router.post("/register", (req, res) => {
     //             'Password must be between 6 and 32 characters in length'
     //     });
     // }
+    const { nanoid } = require("nanoid");
+    
     users.insert({
+      _id: nanoid(10),
       username: req.body.username,
       password: sha256(req.body.password),
       balance: 5000,

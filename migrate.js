@@ -1,0 +1,88 @@
+// Migration script to transfer data from NeDB to MongoDB
+require('dotenv').config();
+const nedb = require('nedb');
+const mongoose = require('mongoose');
+const Product = require('./models/Product');
+const User = require('./models/User');
+
+const MONGODB_URI = process.env.MONGODB_URI;
+
+if (!MONGODB_URI) {
+  console.error('❌ Error: MONGODB_URI environment variable is not set');
+  console.error('Please create a .env file with MONGODB_URI=your_connection_string');
+  process.exit(1);
+}
+
+// Sample products data from products.db
+const sampleProducts = [
+  {"name":"UNIFACTOR Mens Running Shoes","category":"Fashion","cost":50,"rating":5,"image":"https://crio-directus-assets.s3.ap-south-1.amazonaws.com/42d4d057-8704-4174-8d74-e5e9052677c6.png","_id":"BW0jAAeDJmlZCF8i","promoted":true,"promotionOrder":1},
+  {"name":"YONEX Smash Badminton Racquet","category":"Sports","cost":100,"rating":5,"image":"https://crio-directus-assets.s3.ap-south-1.amazonaws.com/64b930f7-3c82-4a29-a433-dbc6f1493578.png","_id":"KCRwjF7lN97HnEaY","promoted":true,"promotionOrder":2},
+  {"name":"Tan Leatherette Weekender Duffle","category":"Fashion","cost":150,"rating":4,"image":"https://crio-directus-assets.s3.ap-south-1.amazonaws.com/ff071a1c-1099-48f9-9b03-f858ccc53832.png","_id":"PmInA797xJhMIPti","promoted":true,"promotionOrder":3},
+  {"name":"The Minimalist Slim Leather Watch","category":"Electronics","cost":60,"rating":5,"image":"https://crio-directus-assets.s3.ap-south-1.amazonaws.com/5b478a4a-bf81-467c-964c-1881887799b7.png","_id":"TwMM4OAhmK0VQ93S","promoted":true,"promotionOrder":4},
+  {"name":"Atomberg 1200mm BLDC motor","category":"Home & Kitchen","cost":80,"rating":5,"image":"https://crio-directus-assets.s3.ap-south-1.amazonaws.com/e8e0832c-8f16-4468-95a0-8aaed387a169.png","_id":"a4sLtEcMpzabRyfx","promoted":true,"promotionOrder":5},
+  {"name":"Bonsai Spirit Tree Table Lamp","category":"Home & Kitchen","cost":80,"rating":5,"image":"https://crio-directus-assets.s3.ap-south-1.amazonaws.com/b49ee2dc-6458-42de-851d-b014ac24cd8e.png","_id":"upLK9JbQ4rMhTwt4","promoted":false},
+  {"name":"Stylecon 9 Seater RHS Sofa Set ","category":"Home & Kitchen","cost":650,"rating":3,"image":"https://crio-directus-assets.s3.ap-south-1.amazonaws.com/7ad56699-20c9-4778-a783-4021e5f0864c.png","_id":"v4sLtEcMpzabRyf","promoted":false},
+  {"name":"Diamond Pendant (0.01 ct, IJ-SI)","category":"Fashion","cost":1000,"rating":5,"image":"https://crio-directus-assets.s3.ap-south-1.amazonaws.com/95d6d42d-3a37-4efb-ad10-3bcbbb599856.png","_id":"v4sLtEcMpzabRyfx","promoted":false},
+  {"name":"Apple iPad Pro with Apple M1 chip","category":"Electronics","cost":900,"rating":5,"image":"https://crio-directus-assets.s3.ap-south-1.amazonaws.com/82ac2e7b-e4dd-4a5b-8dbc-3260225d7eb2.png","_id":"w4sLtEcMpzabRyfx","promoted":false},
+  {"name":"OnePlus (55 inches) Q1 Series 4K","category":"Electronics","cost":1200,"rating":5,"image":"https://crio-directus-assets.s3.ap-south-1.amazonaws.com/a9ca1e8b-8783-4be3-83f8-d06409016e15.png","_id":"x4sLtEcMpzabRyfx","promoted":false},
+  {"name":"Thinking, Fast and Slow","category":"Books","cost":15,"rating":5,"image":"https://crio-directus-assets.s3.ap-south-1.amazonaws.com/cdb64440-5e95-4aaa-858b-8c12ee316d93.png","_id":"y4sLtEcMpzabRyfx","promoted":false},
+  {"name":"GREY DOUBLE BUTTON BLAZER","category":"Fashion","cost":75,"rating":4,"image":"https://crio-directus-assets.s3.ap-south-1.amazonaws.com/869ec5e2-52d2-4b8e-bc6b-57eace9ab39e.png","_id":"z4sLtEcMpzabRyfx","promoted":false}
+];
+
+async function migrate() {
+  try {
+    console.log('Connecting to MongoDB...');
+    await mongoose.connect(MONGODB_URI);
+    console.log('Connected to MongoDB successfully');
+
+    // Check if products already exist
+    const existingProducts = await Product.countDocuments();
+    
+    if (existingProducts === 0) {
+      console.log('Migrating products...');
+      // Insert products with their existing IDs one by one to preserve IDs
+      for (const product of sampleProducts) {
+        await Product.create(product);
+      }
+      console.log(`✅ Migrated ${sampleProducts.length} products successfully`);
+    } else {
+      console.log(`Products already exist in database (${existingProducts} found), skipping migration`);
+    }
+
+    // Migrate users from local NeDB if they exist
+    const users = new nedb({ filename: './db/users.db', autoload: true });
+    
+    users.find({}, async (err, docs) => {
+      if (err) {
+        console.error('Error reading users from NeDB:', err);
+        process.exit(1);
+      }
+
+      if (docs.length > 0) {
+        console.log(`Found ${docs.length} users in local database`);
+        
+        for (const user of docs) {
+          const existingUser = await User.findOne({ username: user.username });
+          if (!existingUser) {
+            await User.create(user);
+            console.log(`Migrated user: ${user.username}`);
+          }
+        }
+        console.log('✅ User migration complete');
+      } else {
+        console.log('No users to migrate');
+      }
+
+      await mongoose.connection.close();
+      console.log('Migration complete. Database connection closed.');
+      process.exit(0);
+    });
+
+  } catch (error) {
+    console.error('Migration error:', error);
+    process.exit(1);
+  }
+}
+
+migrate();
+

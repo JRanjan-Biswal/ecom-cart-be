@@ -1,21 +1,23 @@
 # EComCart Backend API
 
-A RESTful backend API for the EComCart e-commerce platform, built with Node.js, Express.js, and NeDB.
+A RESTful backend API for the EComCart e-commerce platform, built with Node.js, Express.js, and MongoDB (Mongoose).
 
 ## 📋 Table of Contents
 
 - [Overview](#overview)
 - [Features](#features)
 - [Tech Stack](#tech-stack)
-- [API Endpoints](#api-endpoints)
 - [Getting Started](#getting-started)
+- [MongoDB Setup](#mongodb-setup)
 - [Configuration](#configuration)
 - [Database](#database)
 - [Authentication](#authentication)
+- [API Endpoints](#api-endpoints)
+- [Deployment](#deployment)
 
 ## 🎯 Overview
 
-EComCart Backend is a lightweight e-commerce API server that provides essential functionality for user authentication, product management, shopping cart operations, and user profile management. It uses NeDB (Node Embedded Database) for data persistence, making it perfect for development and small-scale deployments.
+EComCart Backend is a lightweight e-commerce API server that provides essential functionality for user authentication, product management, shopping cart operations, and user profile management. It uses **MongoDB** with Mongoose for data persistence, making it perfect for development, production, and deployment on platforms like Vercel.
 
 ## 📸 Application Screenshots
 
@@ -44,17 +46,18 @@ EComCart Backend is a lightweight e-commerce API server that provides essential 
 
 - **Runtime**: Node.js
 - **Framework**: Express.js v4.17.1
-- **Database**: NeDB v1.8.0 (Embedded NoSQL database)
+- **Database**: MongoDB with Mongoose ODM
 - **Authentication**: JSON Web Tokens (JWT)
 - **Security**: CORS enabled, SHA-256 password hashing
-- **Utilities**: nanoid for unique IDs
+- **Utilities**: nanoid for unique IDs, dotenv for environment variables
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
 - Node.js (v14 or higher)
-- npm or pnpm
+- npm
+- MongoDB Atlas account (or local MongoDB instance)
 
 ### Installation
 
@@ -67,18 +70,76 @@ cd EComCart-frontend-v2/backend
 2. Install dependencies:
 ```bash
 npm install
-# or
-pnpm install
 ```
 
-3. Start the server:
+3. Create `.env` file (see MongoDB Setup below)
+
+4. Run migration to populate database:
+```bash
+npm run migrate
+```
+
+5. Start the server:
 ```bash
 npm start
-# or
-node index.js
 ```
 
 The server will start on port `8082` (configurable via `config.json` or `PORT` environment variable).
+
+## 🗄️ MongoDB Setup
+
+### Option 1: MongoDB Atlas (Recommended for Production)
+
+1. **Create MongoDB Atlas Account**:
+   - Go to [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+   - Sign up for a free account
+   - Create a new cluster (free tier available)
+
+2. **Get Connection String**:
+   - Click "Connect" on your cluster
+   - Choose "Connect your application"
+   - Copy the connection string
+
+3. **Create `.env` file** in the `backend` folder:
+   ```env
+   MONGODB_URI=your_mongodb_connection_string_here
+   ```
+
+4. **Example `.env` file**:
+   ```env
+   MONGODB_URI=mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/ecomcart
+   ```
+
+### Option 2: Local MongoDB
+
+If you have MongoDB installed locally:
+
+```env
+MONGODB_URI=mongodb://localhost:27017/ecomcart
+```
+
+### Quick Setup Script
+
+On Windows:
+```bash
+cd backend
+CREATE_ENV.bat
+```
+
+On Linux/Mac:
+```bash
+cd backend
+./create-env.sh
+```
+
+Then edit `.env` and add your MongoDB connection string.
+
+### Security Notes
+
+⚠️ **Important**: 
+- The `.env` file is gitignored and should never be committed
+- Never commit MongoDB credentials to version control
+- Use environment variables for all sensitive data
 
 ## ⚙️ Configuration
 
@@ -93,18 +154,54 @@ The backend configuration is stored in `config.json`:
 
 ### Environment Variables
 
-- `PORT`: Overrides the port specified in config.json (optional)
+#### Required
+
+- `MONGODB_URI`: MongoDB connection string (required)
+  ```
+  MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database
+  ```
+
+#### Optional
+
+- `PORT`: Overrides the port specified in config.json (default: 8082)
 
 ## 📦 Database
 
-The application uses NeDB, a lightweight embedded database:
+The application uses **MongoDB** with Mongoose ODM:
 
-- **Location**: `./db/`
-- **Files**:
-  - `users.db` - User accounts and profiles
-  - `products.db` - Product catalog
+### Models
 
-Data is stored in binary format and persists across server restarts.
+- **User Model** (`models/User.js`):
+  - `username` - Unique username
+  - `password` - SHA-256 hashed password
+  - `balance` - User balance (default: 5000)
+  - `cart` - Array of cart items
+  - `addresses` - Array of user addresses
+  - `name`, `mobile` - Profile information
+  - `orders` - Order history
+
+- **Product Model** (`models/Product.js`):
+  - `name` - Product name
+  - `category` - Product category
+  - `cost` - Price
+  - `rating` - Rating (0-5)
+  - `image` - Image URL
+  - `promoted` - Featured product flag
+  - `promotionOrder` - Order in featured list
+
+### Migration
+
+Run the migration script to populate the database with initial product data:
+
+```bash
+npm run migrate
+```
+
+This will:
+- Connect to your MongoDB database
+- Create the database if it doesn't exist
+- Insert 12 sample products
+- Migrate any existing users from local NeDB files
 
 ## 🔐 Authentication
 
@@ -234,59 +331,120 @@ Content-Type: application/json
 
 ```
 backend/
-├── db/
-│   ├── users.db          # User database
-│   └── products.db       # Product database
-├── routes/
-│   ├── auth.js           # Authentication endpoints
-│   ├── cart.js           # Shopping cart endpoints
-│   ├── product.js        # Product endpoints
-│   └── user.js           # User profile endpoints
-├── config.json           # Configuration file
-├── db.js                 # Database initialization
-├── index.js              # Main server file
-├── utils.js              # Utility functions
-└── package.json          # Dependencies
+├── models/               # Mongoose models
+│   ├── User.js          # User model
+│   └── Product.js       # Product model
+├── routes/              # API route handlers
+│   ├── auth.js         # Authentication endpoints
+│   ├── cart.js         # Shopping cart endpoints
+│   ├── product.js      # Product endpoints
+│   └── user.js         # User profile endpoints
+├── db/                  # Legacy NeDB files (for migration)
+│   ├── users.db
+│   └── products.db
+├── config.json          # Configuration file
+├── db.js                # Mongoose adapter
+├── db-connection.js     # MongoDB connection handler
+├── migrate.js           # Data migration script
+├── index.js             # Main server file
+├── utils.js             # Utility functions
+├── .env                 # Environment variables (create this)
+├── vercel.json          # Vercel configuration
+└── package.json         # Dependencies
 
 ```
 
+## 🚀 Deployment
+
+### Deploy to Vercel
+
+1. **Set up environment variables** in Vercel:
+   - Go to your project settings
+   - Navigate to "Environment Variables"
+   - Add: `MONGODB_URI` with your connection string
+
+2. **Deploy**:
+   ```bash
+   vercel
+   ```
+
+3. **Your API will be available at**:
+   ```
+   https://your-project.vercel.app
+   ```
+
+### Deploy to Railway
+
+1. Connect your GitHub repository
+2. Railway auto-detects the project
+3. Add environment variable: `MONGODB_URI`
+4. Deploy!
+
+### Deploy to Render
+
+1. Create a new Web Service
+2. Connect your GitHub repository
+3. Set Root Directory: `backend`
+4. Add environment variable: `MONGODB_URI`
+5. Deploy!
+
 ## 🔧 Development
 
-### Adding New Products to Database
+### Adding New Products
 
-Products are stored in `products.db`. To add products, use the NeDB API or import from external sources.
+Products are stored in MongoDB. To add products:
+
+```javascript
+const Product = require('./models/Product');
+
+const newProduct = await Product.create({
+  _id: nanoid(),
+  name: "New Product",
+  category: "Electronics",
+  cost: 999,
+  rating: 5,
+  image: "https://example.com/image.png",
+  promoted: false
+});
+```
 
 ### Creating Promoted Products
 
-Promoted products are identified by the `promoted` field set to `true` in the product document.
+Promoted products are identified by the `promoted` field set to `true`:
 
-Example:
 ```javascript
 {
-    _id: "abc123",
-    name: "Product Name",
-    cost: 999,
-    category: "Electronics",
-    rating: 4.5,
-    image: "url",
-    promoted: true,
-    promotionOrder: 1
+  _id: "abc123",
+  name: "Product Name",
+  cost: 999,
+  category: "Electronics",
+  rating: 4.5,
+  image: "url",
+  promoted: true,
+  promotionOrder: 1
 }
 ```
 
 ## ⚠️ Important Notes
 
-- **Security**: This is a development/evaluation backend. For production:
-  - Use a more secure password hashing algorithm (bcrypt)
+- **Security**: 
+  - ⚠️ Never commit `.env` files to git
   - Store JWT secret in environment variables
-  - Implement proper rate limiting
-  - Add input validation and sanitization
-  - Use HTTPS
+  - Use HTTPS in production
+  - Implement rate limiting for production
+  - Consider using bcrypt instead of SHA-256 for passwords
 
-- **Database**: NeDB is suitable for development and small-scale applications. For production, consider:
-  - MongoDB
-  - PostgreSQL
-  - MySQL
+- **Database**: 
+  - Uses MongoDB Atlas for production
+  - Data persists across deployments
+  - Automatic connection pooling
+  - Serverless-ready
+
+## 📚 Additional Resources
+
+- [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) - Cloud MongoDB
+- [Mongoose Docs](https://mongoosejs.com/docs/) - Mongoose documentation
+- [Vercel Docs](https://vercel.com/docs) - Deployment guide
 
 ## 🔗 Related Repositories
 
